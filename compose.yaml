@@ -1,0 +1,67 @@
+name: dorarion
+
+x-dorarion-image: &dorarion-image
+  image: ${DORARION_IMAGE:-kimc1992/dorarion-core:0.0.1}
+
+x-database-environment: &database-environment
+  DATABASE_URL: postgres://${POSTGRES_USER:-dorarion}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dorarion}
+  DB_CONNECTION_POOL_SIZE: ${DB_CONNECTION_POOL_SIZE:-10}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dorarion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dorarion}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  migrate:
+    <<: *dorarion-image
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      <<: *database-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dorarion:
+    <<: *dorarion-image
+    restart: unless-stopped
+    environment:
+      <<: *database-environment
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-dorarion-core}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-dorarion-api}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-600}
+      REFRESH_TOKEN_TTL_SECONDS: ${REFRESH_TOKEN_TTL_SECONDS:-2592000}
+      DORARION_PUBLIC_URL: ${DORARION_PUBLIC_URL:-http://localhost:3000}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY}
+      SECRET_ENCRYPTION_KEY_REF: ${SECRET_ENCRYPTION_KEY_REF:-local:v1}
+      ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    ports:
+      - "${DORARION_PORT:-3000}:3000"
+
+volumes:
+  postgres-data:
