@@ -6,6 +6,14 @@ It defaults to the published `kimc1992/dorarion-core:0.0.1` image. Set
 `DORARION_IMAGE` in `.env.docker` to select another immutable release tag;
 application image builds remain in the `dorarion-core` repository.
 
+## Installation guides
+
+For a complete Windows installation using WSL 2 and Docker:
+
+- [English](docs/installation-windows-wsl.md)
+- [한국어](docs/installation-windows-wsl-ko.md)
+- [简体中文](docs/installation-windows-wsl-zh-cn.md)
+
 ## Install
 
 ```bash
