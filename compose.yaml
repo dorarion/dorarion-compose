@@ -1,7 +1,7 @@
 name: dorarion
 
 x-dorarion-image: &dorarion-image
-  image: ${DORARION_IMAGE:-kimc1992/dorarion-core:0.0.1}
+  image: ${DORARION_IMAGE:-kimc1992/dorarion-core:0.0.3}
 
 x-database-environment: &database-environment
   DATABASE_URL: postgres://${POSTGRES_USER:-dorarion}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dorarion}

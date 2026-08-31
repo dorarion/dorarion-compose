@@ -2,7 +2,7 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-It defaults to the published `kimc1992/dorarion-core:0.0.1` image. Set
+It defaults to the published `kimc1992/dorarion-core:0.0.3` image. Set
 `DORARION_IMAGE` in `.env.docker` to select another immutable release tag;
 application image builds remain in the `dorarion-core` repository.
 
