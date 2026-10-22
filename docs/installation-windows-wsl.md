@@ -1,5 +1,7 @@
 # WSL 2 + Docker + Dorarion
 
+> Beta baseline note (2026-10-10): current core installs two consolidated migrations. Replacing an earlier beta DB requires a new empty DB or an explicit reinstall that discards old data. Do not delete only the SQLx ledger. Use a fresh image built from this source. The README contains the current policy; an earlier downloaded PDF may describe the previous chain.
+
 Simple local installation guide
 
 > **Goal:** Install Ubuntu in WSL 2, install Docker, clone Dorarion, generate its required secrets, create the first administrator, and open Dorarion in your Windows browser.
@@ -93,13 +95,15 @@ cd dorarion-compose
 Run Dorarion's Compose installer once. It prepares the Compose environment, including `.env.docker`:
 
 ```bash
-./scripts/install-compose.sh
+cp .env.docker.example .env.docker
+chmod 600 .env.docker
+${EDITOR:-nano} .env.docker
 ```
 
 Check the environment file:
 
 ```bash
-cat .env.docker
+${EDITOR:-nano} .env.docker
 ```
 
 If `.env.docker` is owned by root, and only if you get a permission error while editing the file, run:
@@ -116,16 +120,18 @@ Run these commands in the `dorarion-compose` directory:
 POSTGRES_PASSWORD="$(openssl rand -hex 32)"
 JWT_SECRET="$(openssl rand -hex 32)"
 SECRET_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+chmod 600 .env.docker
 
 sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" .env.docker
 sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" .env.docker
 sed -i "s|^SECRET_ENCRYPTION_KEY=.*|SECRET_ENCRYPTION_KEY=$SECRET_ENCRYPTION_KEY|" .env.docker
+unset POSTGRES_PASSWORD JWT_SECRET SECRET_ENCRYPTION_KEY
 ```
 
 Make sure no placeholder values remain:
 
 ```bash
-grep 'replace-' .env.docker
+if grep -q 'replace-' .env.docker; then echo 'Replace remaining image/credential placeholders'; fi
 ```
 
 The expected result is no output.
@@ -194,3 +200,21 @@ If Dorarion is not opening, first confirm that the containers are `Up` and that 
 
 - [Install WSL](https://learn.microsoft.com/windows/wsl/install)
 - [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+
+## Installation and upgrades — reviewed core
+
+These settings describe the reviewed pre-1.0 core source. Select an image built from that source; an existing v0.0.3 registry tag does not prove it contains the remediation changes.
+
+Pre-1.0: use the API contract shipped with the selected image. The reviewed source implements CI/CD, jobs, incidents and daily/weekly activity reporting.
+
+- Generate `JWT_SECRET` (at least 32 bytes) and `SECRET_ENCRYPTION_KEY` (Base64 encoding of 32 random bytes) once. Keep both outside version control.
+- The API pool defaults to 15 connections; allow another six worker connections per replica and temporary migration connections.
+- Compose trusts only its exact internal `postgres` host. External PostgreSQL needs `sslmode=verify-full` and the trusted CA.
+- Use `env://DORARION_EXT_<NAME>` for external credentials. Core secret variables are always denied.
+- Argo CD needs a separately rotated application token and an active application/integration. Incident automation needs a repository-scoped incident source.
+
+`/health/live` checks the process; `/health/ready` checks PostgreSQL. Worker health is separate at authenticated `/health/workers`. For Prometheus, store a 32–512-character ASCII `DORARION_METRICS_SCRAPE_TOKEN` in a Secret and use it only at `/metrics`. Configure exact trusted proxy networks before honoring forwarded client addresses.
+
+Back up PostgreSQL and the exact encryption key before forward migrations. Run the migration Job/service once and disable server startup migrations. Change the generated bootstrap password on first login. Rotate Argo application tokens after upgrading. Audit retention cannot be shorter than 365 days. Weekly reports cover the seven complete local days before sending; reuse the same Idempotency-Key when retrying one manual send. Incident reopening must be explicit. Read the bundled API contract: demo routes were removed and unknown request fields are rejected. Validate backups, provider delivery and readiness in your environment before production rollout.
+
+Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOKIE_SECURE=false`; set a reachable HTTPS public origin and secure cookies for remote use. The published port binds to `127.0.0.1` by default. `/health/ready` is database-only; the container uses the native `dorarion-core healthcheck` command. `DORARION_MIGRATE_ON_START=false` delegates migration to the one-shot service. The environment file is private (0600); avoid printing it.

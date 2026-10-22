@@ -1,5 +1,7 @@
 # WSL 2 + Docker + Dorarion
 
+> Beta 数据库说明（2026-10-10）：当前 core 使用两个合并后的迁移文件。替换旧 Beta 数据库需要新的空数据库或明确删除旧数据后重新安装。不要只删除 SQLx 记录。请从当前源码构建新镜像，并参考 README 的最新政策；以前下载的 PDF 可能包含旧流程。
+
 简易本地安装指南
 
 > **目标：** 在 WSL 2 中安装 Ubuntu，安装 Docker，克隆 Dorarion，生成所需密钥，创建第一个管理员账户，然后在 Windows 浏览器中打开 Dorarion。
@@ -93,13 +95,15 @@ cd dorarion-compose
 先运行一次 Dorarion 的 Compose 安装脚本。该脚本会准备 Compose 环境，包括 `.env.docker`：
 
 ```bash
-./scripts/install-compose.sh
+cp .env.docker.example .env.docker
+chmod 600 .env.docker
+${EDITOR:-nano} .env.docker
 ```
 
 检查环境文件：
 
 ```bash
-cat .env.docker
+${EDITOR:-nano} .env.docker
 ```
 
 如果 `.env.docker` 的所有者是 root，仅当编辑文件时出现权限错误，才运行：
@@ -116,16 +120,18 @@ sudo chown "$USER:$USER" .env.docker
 POSTGRES_PASSWORD="$(openssl rand -hex 32)"
 JWT_SECRET="$(openssl rand -hex 32)"
 SECRET_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+chmod 600 .env.docker
 
 sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" .env.docker
 sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" .env.docker
 sed -i "s|^SECRET_ENCRYPTION_KEY=.*|SECRET_ENCRYPTION_KEY=$SECRET_ENCRYPTION_KEY|" .env.docker
+unset POSTGRES_PASSWORD JWT_SECRET SECRET_ENCRYPTION_KEY
 ```
 
 确认没有剩余 placeholder 值：
 
 ```bash
-grep 'replace-' .env.docker
+if grep -q 'replace-' .env.docker; then echo 'Replace remaining image/credential placeholders'; fi
 ```
 
 预期结果是没有任何输出。
@@ -194,3 +200,21 @@ sudo docker compose --env-file .env.docker logs --tail=100
 
 - [安装 Microsoft WSL](https://learn.microsoft.com/windows/wsl/install)
 - [在 Ubuntu 上安装 Docker Engine](https://docs.docker.com/engine/install/ubuntu/)
+
+## 安装与升级 — reviewed core
+
+这些设置针对已审查的 1.0 之前 core 源码。请选择由该源码构建的镜像；现有 v0.0.3 标签不能证明包含本次修复。
+
+1.0 之前版本：请使用所选镜像附带的 API 契约。已审查源码支持 CI/CD、运维任务、事故及每日/每周活动报告。
+
+- 一次生成 `JWT_SECRET`（至少 32 字节）和 `SECRET_ENCRYPTION_KEY`（32 个随机字节的 Base64），不要提交到 Git。
+- API 连接池默认 15；每个副本还需预留 6 个 worker 连接及临时迁移连接。
+- Compose 仅显式信任内部 `postgres` 主机；外部 PostgreSQL 需要 `sslmode=verify-full` 和可信 CA。
+- 外部凭据使用 `env://DORARION_EXT_<NAME>`；core 秘密环境变量始终被拒绝。
+- Argo CD 使用独立轮换的应用令牌，应用和集成都须启用。事故自动化使用限定仓库的 incident source。
+
+`/health/live` 检查进程，`/health/ready` 检查 PostgreSQL。worker 状态单独通过需认证的 `/health/workers` 查看。Prometheus 使用 Secret 中 32–512 个 ASCII 字符的 `DORARION_METRICS_SCRAPE_TOKEN`，仅发送至 `/metrics`。接受转发的客户端地址前必须配置可信代理网络。
+
+前向迁移前备份 PostgreSQL 和原始加密密钥。单独运行迁移 Job/服务，关闭服务器启动迁移。首次登录修改生成的管理员密码，升级后轮换 Argo 应用令牌。审计保留不能短于 365 天。每周报告覆盖发送前完整的本地 7 天；重试同一次手动发送应复用 Idempotency-Key。重新打开事故必须显式请求。演示端点已删除，未知请求字段被拒绝，请检查镜像内的 API 契约。上线前在自己的环境验证恢复、供应商消息和 readiness。
+
+Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOKIE_SECURE=false`; set a reachable HTTPS public origin and secure cookies for remote use. The published port binds to `127.0.0.1` by default. `/health/ready` is database-only; the container uses the native `dorarion-core healthcheck` command. `DORARION_MIGRATE_ON_START=false` delegates migration to the one-shot service. The environment file is private (0600); avoid printing it.

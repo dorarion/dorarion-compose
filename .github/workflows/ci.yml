@@ -1,0 +1,13 @@
+name: Compose validation
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Check shell syntax
+        run: bash -n scripts/install-compose.sh scripts/update-compose.sh tests/check.sh
+      - name: Validate Compose and failure handling
+        run: bash tests/check.sh

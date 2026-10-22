@@ -1,16 +1,25 @@
 name: dorarion
 
 x-dorarion-image: &dorarion-image
-  image: ${DORARION_IMAGE:-kimc1992/dorarion-core:0.0.3}
+  image: ${DORARION_IMAGE:?set DORARION_IMAGE to a reviewed core image tag or digest}
+  env_file:
+    - ${DORARION_ENV_FILE:-.env.docker}
 
 x-database-environment: &database-environment
   DATABASE_URL: postgres://${POSTGRES_USER:-dorarion}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dorarion}
-  DB_CONNECTION_POOL_SIZE: ${DB_CONNECTION_POOL_SIZE:-10}
+  DORARION_DATABASE_TRUSTED_HOSTS: postgres
+  DORARION_DB_STATEMENT_TIMEOUT_MS: ${DORARION_DB_STATEMENT_TIMEOUT_MS:-30000}
+  DB_CONNECTION_POOL_SIZE: ${DB_CONNECTION_POOL_SIZE:-15}
 
 services:
   postgres:
-    image: postgres:18
+    image: postgres:18@sha256:fc973eb97c9fd04bfa1840e0f510719a584ccb3be8debfe6a4144637a9dfe8cf
     restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "${DORARION_LOG_MAX_SIZE:-10m}"
+        max-file: "${DORARION_LOG_MAX_FILES:-30}"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dorarion}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -30,6 +39,10 @@ services:
     restart: "no"
     environment:
       <<: *database-environment
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-dorarion-core}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-dorarion-api}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +50,13 @@ services:
   dorarion:
     <<: *dorarion-image
     restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "${DORARION_LOG_MAX_SIZE:-10m}"
+        max-file: "${DORARION_LOG_MAX_FILES:-30}"
+    command: ["serve"]
+    stop_grace_period: 60s
     environment:
       <<: *database-environment
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
@@ -48,6 +68,12 @@ services:
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY}
       SECRET_ENCRYPTION_KEY_REF: ${SECRET_ENCRYPTION_KEY_REF:-local:v1}
       ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
+      DORARION_MIGRATE_ON_START: "false"
+      DORARION_COOKIE_SECURE: ${DORARION_COOKIE_SECURE:-true}
+      DORARION_STALE_RUN_HOURS: ${DORARION_STALE_RUN_HOURS:-24}
+      DORARION_SECRET_ENV_ALLOWLIST: ${DORARION_SECRET_ENV_ALLOWLIST:-}
+      DORARION_README_IMAGE_ORIGINS: ${DORARION_README_IMAGE_ORIGINS:-}
+      HOST: 0.0.0.0
       PORT: 3000
     depends_on:
       postgres:
@@ -55,13 +81,13 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3000/health/ready"]
+      test: ["CMD", "dorarion-core", "healthcheck"]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 15s
     ports:
-      - "${DORARION_PORT:-3000}:3000"
+      - "${DORARION_BIND_ADDRESS:-127.0.0.1}:${DORARION_PORT:-3000}:3000"
 
 volumes:
   postgres-data:

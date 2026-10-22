@@ -11,21 +11,24 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  cp "$PROJECT_DIR/.env.docker.example" "$ENV_FILE"
+  (umask 077; cp "$PROJECT_DIR/.env.docker.example" "$ENV_FILE")
   echo "Created $ENV_FILE"
-  echo "Set strong POSTGRES_PASSWORD and JWT_SECRET values, then run this script again."
+  echo "Select a reviewed DORARION_IMAGE and set POSTGRES_PASSWORD, JWT_SECRET, and SECRET_ENCRYPTION_KEY, then run this script again."
   exit 1
 fi
 
-if grep -qE '^(POSTGRES_PASSWORD|JWT_SECRET|SECRET_ENCRYPTION_KEY)=replace-' "$ENV_FILE"; then
-  echo "Replace the placeholder POSTGRES_PASSWORD, JWT_SECRET, and SECRET_ENCRYPTION_KEY values in $ENV_FILE." >&2
+chmod 600 "$ENV_FILE"
+export DORARION_ENV_FILE="$ENV_FILE"
+
+if grep -qE '^(DORARION_IMAGE|POSTGRES_PASSWORD|JWT_SECRET|SECRET_ENCRYPTION_KEY)=replace-' "$ENV_FILE"; then
+  echo "Replace the placeholder DORARION_IMAGE, POSTGRES_PASSWORD, JWT_SECRET, and SECRET_ENCRYPTION_KEY values in $ENV_FILE." >&2
   exit 1
 fi
 
 docker compose \
   --project-directory "$PROJECT_DIR" \
   --env-file "$ENV_FILE" \
-  up --detach --pull always --wait
+  up --detach --wait
 
 PORT="$(sed -n 's/^DORARION_PORT=//p' "$ENV_FILE" | tail -n 1)"
 echo "Dorarion is available on http://localhost:${PORT:-3000}"

@@ -15,6 +15,14 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+chmod 600 "$ENV_FILE"
+export DORARION_ENV_FILE="$ENV_FILE"
+
+if grep -qE '^(DORARION_IMAGE|POSTGRES_PASSWORD|JWT_SECRET|SECRET_ENCRYPTION_KEY)=replace-' "$ENV_FILE"; then
+  echo "Replace all image and credential placeholders before updating." >&2
+  exit 1
+fi
+
 compose() {
   docker compose --project-directory "$PROJECT_DIR" --env-file "$ENV_FILE" "$@"
 }
