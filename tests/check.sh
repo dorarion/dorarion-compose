@@ -44,7 +44,7 @@ DORARION_IMAGE="$release_image" compose --project-directory "$root" --env-file "
 python3 - "$temporary/release.json" <<'PYRELEASE'
 import json,sys
 services=json.load(open(sys.argv[1]))['services']
-expected='docker.io/kimc1992/dorarion-core:0.0.5@sha256:0dbc38be4c403cd2e7d9ac1bf29761364d9832063d3638ed8cfde06dba4e6061'
+expected='docker.io/kimc1992/dorarion-core:0.0.6'
 assert all(services[name]['image']==expected for name in ('dorarion','migrate'))
 print('Compose release image pin verified for server and migration.')
 PYRELEASE

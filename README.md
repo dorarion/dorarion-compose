@@ -2,10 +2,10 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-The example `.env.docker` selects Docker Hub core `kimc1992/dorarion-core:0.0.5`,
-pinned to the supplied linux/amd64 manifest digest. Use an amd64 Docker host.
-This pin selects an exact artifact; it does not establish that the image contains
-the current source fixes. Override `DORARION_IMAGE` to test another tag or digest.
+The example `.env.docker` selects Docker Hub core `kimc1992/dorarion-core:0.0.6`.
+The tag must be published before installation or update. To pin an exact artifact,
+set `DORARION_IMAGE=docker.io/kimc1992/dorarion-core:0.0.6@sha256:<verified-digest>`
+after verifying its registry digest.
 Application image builds remain in `dorarion-core`.
 
 Compose runs core and PostgreSQL. The optional listener `0.0.1` is tested through
