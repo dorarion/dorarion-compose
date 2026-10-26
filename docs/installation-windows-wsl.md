@@ -203,7 +203,7 @@ If Dorarion is not opening, first confirm that the containers are `Up` and that 
 
 ## Installation and upgrades — reviewed core
 
-These settings describe the reviewed pre-1.0 core source. Select an image built from that source; an existing v0.0.3 registry tag does not prove it contains the remediation changes.
+These settings describe the reviewed pre-1.0 core source. Select an image built from that source; an existing older registry tag does not prove it contains the remediation changes.
 
 Pre-1.0: use the API contract shipped with the selected image. The reviewed source implements CI/CD, jobs, incidents and daily/weekly activity reporting.
 
@@ -218,3 +218,23 @@ Pre-1.0: use the API contract shipped with the selected image. The reviewed sour
 Back up PostgreSQL and the exact encryption key before forward migrations. Run the migration Job/service once and disable server startup migrations. Change the generated bootstrap password on first login. Rotate Argo application tokens after upgrading. Audit retention cannot be shorter than 365 days. Weekly reports cover the seven complete local days before sending; reuse the same Idempotency-Key when retrying one manual send. Incident reopening must be explicit. Read the bundled API contract: demo routes were removed and unknown request fields are rejected. Validate backups, provider delivery and readiness in your environment before production rollout.
 
 Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOKIE_SECURE=false`; set a reachable HTTPS public origin and secure cookies for remote use. The published port binds to `127.0.0.1` by default. `/health/ready` is database-only; the container uses the native `dorarion-core healthcheck` command. `DORARION_MIGRATE_ON_START=false` delegates migration to the one-shot service. The environment file is private (0600); avoid printing it.
+
+
+## Release and recovery notes (2026-10-27)
+
+Release tags must be immutable. This distribution selects core `0.0.7`.
+Set `DORARION_IMAGE=docker.io/kimc1992/dorarion-core:0.0.7@sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`
+in your existing `.env.docker`. This is the verified linux/amd64 manifest; use an
+amd64 Docker host. Replace the entire image value, including any older digest. The version returned by `/health` and
+`/api/openapi.json` must match `0.0.7`.
+
+Use `DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.corp.example` for provider
+access and `DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.corp.example` for
+webhooks. Entries are exact hostnames, IP addresses, or CIDRs, comma-separated:
+no URL schemes, paths (except CIDR), or hostname ports. The provider URL itself
+may include a port. The legacy broad switch is deprecated.
+
+Stop writers and receivers and restore backups into a **new, empty database**.
+Preserve the old database and encryption key. Never overlay an older dump with
+`pg_restore --clean --if-exists`; leftover newer objects can break migration
+replay. Switch the database connection, run migrations, then verify readiness.

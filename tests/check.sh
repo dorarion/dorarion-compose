@@ -17,6 +17,8 @@ POSTGRES_PASSWORD=configuration-test-only
 JWT_SECRET=configuration-test-only-with-more-than-32-bytes
 SECRET_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 DORARION_COOKIE_SECURE=false
+DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.internal
+DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.internal
 DORARION_EXT_TEST_TOKEN=external-test-credential
 ENV
 )
@@ -29,6 +31,8 @@ for service in (app,migration):
     assert e['DB_CONNECTION_POOL_SIZE']=='15' and e['DORARION_DB_STATEMENT_TIMEOUT_MS']=='30000'
     assert all(e.get(k) for k in ('JWT_SECRET','JWT_ISSUER','JWT_AUDIENCE','SECRET_ENCRYPTION_KEY'))
     assert e['DORARION_EXT_TEST_TOKEN']=='external-test-credential'
+    assert e['DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS']=='gitlab.internal'
+    assert e['DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS']=='hooks.internal'
 assert app['environment']['DORARION_MIGRATE_ON_START']=='false'
 assert app['environment']['DORARION_COOKIE_SECURE']=='false'
 assert app['healthcheck']['test']==['CMD','dorarion-core','healthcheck']
@@ -44,9 +48,9 @@ DORARION_IMAGE="$release_image" compose --project-directory "$root" --env-file "
 python3 - "$temporary/release.json" <<'PYRELEASE'
 import json,sys
 services=json.load(open(sys.argv[1]))['services']
-expected='docker.io/kimc1992/dorarion-core:0.0.6'
+expected='docker.io/kimc1992/dorarion-core:0.0.7@sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2'
 assert all(services[name]['image']==expected for name in ('dorarion','migrate'))
-print('Compose release image pin verified for server and migration.')
+print('Compose 0.0.7 digest pin verified for server and migration.')
 PYRELEASE
 # Simulate a failed migration: the updater must never replace the running app.
 mkdir "$temporary/bin"

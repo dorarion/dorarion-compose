@@ -2,10 +2,12 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-The example `.env.docker` selects Docker Hub core `kimc1992/dorarion-core:0.0.6`.
-The tag must be published before installation or update. To pin an exact artifact,
-set `DORARION_IMAGE=docker.io/kimc1992/dorarion-core:0.0.6@sha256:<verified-digest>`
-after verifying its registry digest.
+The example `.env.docker` selects Docker Hub core `kimc1992/dorarion-core:0.0.7`,
+pinned to the verified linux/amd64 manifest:
+`sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`.
+Use an amd64 Docker host. Both the server and migration service use this image.
+Never combine a new tag with an older image's digest: the digest takes precedence.
+Keep release tags immutable and publish fixes under a new tag.
 Application image builds remain in `dorarion-core`.
 
 Compose runs core and PostgreSQL. The optional listener `0.0.1` is tested through
@@ -48,7 +50,11 @@ command refuses to create an administrator when a login account already exists.
 
 ## Upgrade
 
-Back up PostgreSQL, change `DORARION_IMAGE` in `.env.docker` to the new immutable release tag, then run:
+Back up PostgreSQL and change `DORARION_IMAGE` in your existing `.env.docker`
+to the new release image. Updating `.env.docker.example` does not update an
+existing installation. For this release use
+`docker.io/kimc1992/dorarion-core:0.0.7@sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`.
+Replace the entire value, including any older digest, then run:
 
 ```bash
 ./scripts/update-compose.sh
@@ -111,3 +117,26 @@ the SQLx ledger or reuse an earlier image after initializing the new schema.
 See the core migrations/README.md for the reinstall procedure. Existing data is
 not automatically deleted by Compose scripts or Helm hooks. Build a fresh image
 from the reviewed source and use a new immutable tag/digest. Listener is optional.
+
+
+## Private network access
+
+Set `DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.corp.example` and, separately,
+`DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.corp.example` in the private
+`.env.docker` file. Compose forwards them through `env_file` to core and CLI
+services. Prefer these over `ALLOW_PRIVATE_WEBHOOK_DESTINATIONS`, which is
+deprecated. Values are comma-separated exact hostnames, IP addresses, or CIDRs;
+do not include URL schemes, paths (except CIDR), or hostname ports. For example,
+use `gitlab.corp.example`, not `gitlab.corp.example:8443`; the GitLab URL itself
+may include port 8443. DNS, trusted CA certificates, and network access must also
+be configured independently.
+
+## Restore into an empty database
+
+Stop all application writers and receivers. Preserve the encryption key and
+restore the dump into a new, empty PostgreSQL database, then point the installation
+at it. Keep the original database until recovery is verified. Run the matching
+image's migration service and verify readiness before resuming traffic.
+Do not restore an older dump over a newer database using
+`pg_restore --clean --if-exists`: objects absent from the dump can survive while
+the migration ledger is restored to an older state, breaking the next upgrade.

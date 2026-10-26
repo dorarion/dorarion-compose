@@ -2,6 +2,8 @@ name: dorarion
 
 x-dorarion-image: &dorarion-image
   image: ${DORARION_IMAGE:?set DORARION_IMAGE to a reviewed core image tag or digest}
+  # Also forwards DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS and
+  # DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS without overriding omitted values.
   env_file:
     - ${DORARION_ENV_FILE:-.env.docker}
 
