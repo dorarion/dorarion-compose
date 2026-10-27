@@ -222,11 +222,11 @@ Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOK
 
 ## 发布与恢复注意事项（2026-10-27）
 
-不要覆盖发布标签；此部署配置使用核心 `0.0.7`。将现有 `.env.docker` 中的
-`DORARION_IMAGE` 改为 `docker.io/kimc1992/dorarion-core:0.0.7@sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`。
-这是已验证的 linux/amd64 manifest，请使用 amd64 Docker 主机。
+不要覆盖发布标签；此部署配置使用核心 `0.0.8`。将现有 `.env.docker` 中的
+`DORARION_IMAGE` 改为 `docker.io/kimc1992/dorarion-core:0.0.8@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`。
+这是已验证的共享镜像索引，包含 linux/amd64 和 linux/arm64；Docker 会自动选择匹配的平台。
 替换整个镜像值，包括旧摘要。
-确认 `/health` 和 `/api/openapi.json` 的版本均为 `0.0.7`。
+确认 `/health` 和 `/api/openapi.json` 的版本均为 `0.0.8`。
 
 提供者连接使用 `DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.corp.example`，
 Webhook 使用 `DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.corp.example`。

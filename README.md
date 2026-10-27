@@ -2,12 +2,9 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-The example `.env.docker` selects Docker Hub core `kimc1992/dorarion-core:0.0.7`,
-pinned to the verified linux/amd64 manifest:
-`sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`.
-Use an amd64 Docker host. Both the server and migration service use this image.
-Never combine a new tag with an older image's digest: the digest takes precedence.
-Keep release tags immutable and publish fixes under a new tag.
+Core `0.0.8` uses the shared image-index digest `sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
+The published `0.0.8` index contains **linux/amd64 and linux/arm64**. Docker
+selects the matching platform automatically from this shared index.
 Application image builds remain in `dorarion-core`.
 
 Compose runs core and PostgreSQL. The optional listener `0.0.1` is tested through
@@ -53,7 +50,7 @@ command refuses to create an administrator when a login account already exists.
 Back up PostgreSQL and change `DORARION_IMAGE` in your existing `.env.docker`
 to the new release image. Updating `.env.docker.example` does not update an
 existing installation. For this release use
-`docker.io/kimc1992/dorarion-core:0.0.7@sha256:3612981b1db1fc898311eaeb091c15964737b25ab31504c5ac6086d5d896a2c2`.
+`docker.io/kimc1992/dorarion-core:0.0.8@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
 Replace the entire value, including any older digest, then run:
 
 ```bash
@@ -140,3 +137,12 @@ image's migration service and verify readiness before resuming traffic.
 Do not restore an older dump over a newer database using
 `pg_restore --clean --if-exists`: objects absent from the dump can survive while
 the migration ledger is restored to an older state, breaking the next upgrade.
+
+
+## Multi-platform release promotion
+
+For a new core release, pin the **shared image-index digest**, never a platform's
+individual manifest. Docker then selects the matching architecture. Publication
+must verify that the index contains both `linux/amd64` and `linux/arm64` and that
+each image passed its platform test. See the core [multi-platform release guide](../dorarion-core/docs/multi-platform-releases.md).
+Keep the current pin until that new release has been published and verified.
