@@ -1,1 +1,6 @@
 .env.docker
+
+# Keep developer instructions/tools; ignore local environments and generated files.
+/dev/*
+!/dev/Readme.md
+!/dev/update-release.sh

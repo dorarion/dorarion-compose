@@ -222,12 +222,12 @@ Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOK
 
 ## 릴리스 및 복원 주의사항 (2026-10-27)
 
-릴리스 태그를 덮어쓰지 마세요. 이 배포 설정은 코어 `0.0.8`을 사용합니다.
+릴리스 태그를 덮어쓰지 마세요. 이 배포 설정은 코어 `0.0.11`을 사용합니다.
 기존 `.env.docker`의 `DORARION_IMAGE`를
-`docker.io/kimc1992/dorarion-core:0.0.8@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`로
+`docker.io/kimc1992/dorarion-core:0.0.11@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`로
 변경하세요. 공유 이미지 인덱스입니다. 지원 플랫폼은 README에서 확인하세요. Docker가 호스트에 맞는 이미지를 선택합니다.
 이전 digest를 포함한 이미지 값 전체를 교체하세요.
-`/health`와 `/api/openapi.json`의 버전이 모두 `0.0.8`인지 확인하세요.
+`/health`와 `/api/openapi.json`의 버전이 모두 `0.0.11`인지 확인하세요.
 
 제공자 연결에는 `DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.corp.example`,
 웹훅에는 `DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.corp.example`를 사용하세요.

@@ -2,10 +2,13 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-Core `0.0.8` uses the shared image-index digest `sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
-The published `0.0.8` index contains **linux/amd64 and linux/arm64**. Docker
+Core `0.0.11` uses the shared image-index digest `sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
+The published `0.0.11` index contains **linux/amd64 and linux/arm64**. Docker
 selects the matching platform automatically from this shared index.
 Application image builds remain in `dorarion-core`.
+
+Maintainers: see [dev/Readme.md](dev/Readme.md) to update a release version,
+its verified image digest, installation guides, and all three PDFs together.
 
 Compose runs core and PostgreSQL. The optional listener `0.0.1` is tested through
 the Helm chart; this Compose distribution does not deploy a receiver or watcher.
@@ -50,7 +53,7 @@ command refuses to create an administrator when a login account already exists.
 Back up PostgreSQL and change `DORARION_IMAGE` in your existing `.env.docker`
 to the new release image. Updating `.env.docker.example` does not update an
 existing installation. For this release use
-`docker.io/kimc1992/dorarion-core:0.0.8@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
+`docker.io/kimc1992/dorarion-core:0.0.11@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
 Replace the entire value, including any older digest, then run:
 
 ```bash
