@@ -22,7 +22,7 @@ dev/.venv/bin/pip install Markdown==3.10.2
 From the repository root:
 
 ```bash
-./dev/update-release.sh 0.0.16
+./dev/update-release.sh 0.0.17
 git diff --stat
 git diff
 ```

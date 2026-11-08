@@ -222,11 +222,11 @@ Compose: select `DORARION_IMAGE` before starting. Local HTTP uses `DORARION_COOK
 
 ## Release and recovery notes (2026-10-27)
 
-Release tags must be immutable. This distribution selects core `0.0.16`.
-Set `DORARION_IMAGE=docker.io/kimc1992/dorarion-core:0.0.16@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`
+Release tags must be immutable. This distribution selects core `0.0.17`.
+Set `DORARION_IMAGE=docker.io/kimc1992/dorarion-core:0.0.17@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`
 in your existing `.env.docker`. This is the shared image index. Check the README for the platforms included
 in the selected release; Docker chooses the matching image automatically. Replace the entire image value, including any older digest. The version returned by `/health` and
-`/api/openapi.json` must match `0.0.16`.
+`/api/openapi.json` must match `0.0.17`.
 
 Use `DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS=gitlab.corp.example` for provider
 access and `DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS=hooks.corp.example` for

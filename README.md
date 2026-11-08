@@ -2,8 +2,8 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-Core `0.0.16` uses the shared image-index digest `sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
-The published `0.0.16` index contains **linux/amd64 and linux/arm64**. Docker
+Core `0.0.17` uses the shared image-index digest `sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
+The published `0.0.17` index contains **linux/amd64 and linux/arm64**. Docker
 selects the matching platform automatically from this shared index.
 Application image builds remain in `dorarion-core`.
 
@@ -53,7 +53,7 @@ command refuses to create an administrator when a login account already exists.
 Back up PostgreSQL and change `DORARION_IMAGE` in your existing `.env.docker`
 to the new release image. Updating `.env.docker.example` does not update an
 existing installation. For this release use
-`docker.io/kimc1992/dorarion-core:0.0.16@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
+`docker.io/kimc1992/dorarion-core:0.0.17@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
 Replace the entire value, including any older digest, then run:
 
 ```bash
