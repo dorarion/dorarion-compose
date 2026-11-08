@@ -2,7 +2,7 @@
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ $# != 1 || ! $1 =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Usage: $0 VERSION (example: $0 0.0.11)" >&2
+  echo "Usage: $0 VERSION (example: $0 0.0.16)" >&2
   exit 2
 fi
 python="${PYTHON:-$root/dev/.venv/bin/python}"

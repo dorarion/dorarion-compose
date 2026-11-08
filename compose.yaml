@@ -2,6 +2,14 @@ name: dorarion
 
 x-dorarion-image: &dorarion-image
   image: ${DORARION_IMAGE:?set DORARION_IMAGE to a reviewed core image tag or digest}
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  # Keep a small writable scratch area; application data lives in PostgreSQL.
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=16m,mode=1777
   # Also forwards DORARION_ALLOWED_PRIVATE_PROVIDER_HOSTS and
   # DORARION_ALLOWED_PRIVATE_WEBHOOK_HOSTS without overriding omitted values.
   env_file:

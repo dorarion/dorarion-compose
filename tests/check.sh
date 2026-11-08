@@ -27,6 +27,10 @@ python3 - "$temporary/config.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))['services'];app=s['dorarion'];migration=s['migrate']
 for service in (app,migration):
+    assert service['read_only'] is True
+    assert service['cap_drop']==['ALL']
+    assert 'no-new-privileges:true' in service['security_opt']
+    assert service['tmpfs']==['/tmp:rw,noexec,nosuid,size=16m,mode=1777']
     e=service['environment'];assert e['DORARION_DATABASE_TRUSTED_HOSTS']=='postgres'
     assert e['DB_CONNECTION_POOL_SIZE']=='15' and e['DORARION_DB_STATEMENT_TIMEOUT_MS']=='30000'
     assert all(e.get(k) for k in ('JWT_SECRET','JWT_ISSUER','JWT_AUDIENCE','SECRET_ENCRYPTION_KEY'))
@@ -40,7 +44,9 @@ assert app['ports'][0]['host_ip']=='127.0.0.1'
 assert app['stop_grace_period'].startswith('1m') or app['stop_grace_period']=='60s'
 assert app['depends_on']['migrate']['condition']=='service_completed_successfully'
 assert '@sha256:' in s['postgres']['image']
-print('Compose trust, secrets, environment propagation, health, migration and port boundaries passed.')
+assert not s['postgres'].get('read_only', False)
+assert any(v['target']=='/var/lib/postgresql' and not v.get('read_only', False) for v in s['postgres']['volumes'])
+print('Compose hardening, writable database volume, trust, secrets, health and migration boundaries passed.')
 PY
 # Validate the release image from the installation example as well as overrides.
 release_image="$(sed -n 's/^DORARION_IMAGE=//p' "$root/.env.docker.example")"
@@ -48,7 +54,7 @@ DORARION_IMAGE="$release_image" compose --project-directory "$root" --env-file "
 python3 - "$temporary/release.json" <<'PYRELEASE'
 import json,sys
 services=json.load(open(sys.argv[1]))['services']
-expected='docker.io/kimc1992/dorarion-core:0.0.11@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97'
+expected='docker.io/kimc1992/dorarion-core:0.0.16@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318'
 assert all(services[name]['image']==expected for name in ('dorarion','migrate'))
 print('Compose release image-index pin verified for server and migration.')
 PYRELEASE

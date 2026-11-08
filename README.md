@@ -2,8 +2,8 @@
 
 This distribution runs Dorarion with PostgreSQL 18, a persistent database volume and a one-shot SQLx migration service.
 
-Core `0.0.11` uses the shared image-index digest `sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
-The published `0.0.11` index contains **linux/amd64 and linux/arm64**. Docker
+Core `0.0.16` uses the shared image-index digest `sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
+The published `0.0.16` index contains **linux/amd64 and linux/arm64**. Docker
 selects the matching platform automatically from this shared index.
 Application image builds remain in `dorarion-core`.
 
@@ -53,7 +53,7 @@ command refuses to create an administrator when a login account already exists.
 Back up PostgreSQL and change `DORARION_IMAGE` in your existing `.env.docker`
 to the new release image. Updating `.env.docker.example` does not update an
 existing installation. For this release use
-`docker.io/kimc1992/dorarion-core:0.0.11@sha256:156e422514c7974010483a8938c579453d02f884353b9b4b9b9919537fed9f97`.
+`docker.io/kimc1992/dorarion-core:0.0.16@sha256:c1e0366a56de67ac27550838bd4fe4a602a246f64af5151782ac608d41c60318`.
 Replace the entire value, including any older digest, then run:
 
 ```bash
@@ -149,3 +149,17 @@ individual manifest. Docker then selects the matching architecture. Publication
 must verify that the index contains both `linux/amd64` and `linux/arm64` and that
 each image passed its platform test. See the core [multi-platform release guide](../dorarion-core/docs/multi-platform-releases.md).
 Keep the current pin until that new release has been published and verified.
+
+## Container hardening
+
+The shared core image configuration applies a read-only root filesystem,
+`cap_drop: [ALL]`, and `no-new-privileges:true` to both the server and migration
+service, including one-off bootstrap commands run through those services.
+The image runs as its non-root user. `/tmp` is a writable 16 MiB memory filesystem
+with `noexec` and `nosuid`; PostgreSQL holds application data.
+
+These restrictions are not copied onto the official PostgreSQL container:
+its initialization entrypoint needs ownership/user-switching capabilities and
+its data directory must remain writable. Its existing named data volume is retained.
+Mount custom CA/configuration files read-only. Keep application runtime files
+outside the read-only root filesystem when adding a custom extension.
